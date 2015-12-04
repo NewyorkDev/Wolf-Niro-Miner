@@ -1320,6 +1320,8 @@ int main(int argc, char **argv)
 	
 	RestartMining = (atomic_bool *)malloc(sizeof(atomic_bool) * Settings.TotalThreads);
 	
+	NetworkingInit();
+	
 	char *TmpPort;
 	uint32_t URLOffset;
 	
@@ -1466,6 +1468,8 @@ int main(int argc, char **argv)
 	pthread_cancel(BroadcastThread);
 	
 	closesocket(poolsocket);
+	
+	NetworkingShutdown();
 	
 	// All other threads have been terminated, so no need to
 	// acquire the mutex to access the global statistics.
