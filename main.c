@@ -2,12 +2,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <signal.h>
-#include <unistd.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <jansson.h>
 #include <sys/time.h>
 #include <stdatomic.h>
+#include <CL/cl.h>
+
+#ifdef __linux__
+
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -15,7 +19,12 @@
 #include <netdb.h>
 #include <sched.h>
 #include <fcntl.h>
-#include <CL/cl.h>
+
+#else
+
+#include <winsock2.h>
+
+#endif
 
 #include "minerutils.h"
 #include "minerlog.h"
