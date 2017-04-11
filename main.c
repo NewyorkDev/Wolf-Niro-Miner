@@ -1476,7 +1476,33 @@ int main(int argc, char **argv)
 	
 	json_decref(Settings.AlgoSpecificConfig);
 	
-	while(!ExitFlag) sleep(1);
+	while(!ExitFlag)
+	{
+		char statline[2048];
+		double AllHash = 0.0;
+		uint64_t Mined, Rejects;
+		sleep(3);
+		
+		statline[0] = 0x00;
+		
+		pthread_mutex_lock(&StatusMutex);
+		
+		for(int i = 0; i < Settings.TotalThreads; ++i)
+		{
+			char tmpstr[256];
+			AllHash += GlobalStatus.ThreadHashCounts[i] / (GlobalStatus.ThreadTimes[i] * 1e6);
+			snprintf(tmpstr, 255, "T%d: %.02fMH/s %s ", i, GlobalStatus.ThreadHashCounts[i] / (GlobalStatus.ThreadTimes[i] * 1e6), (i == (Settings.TotalThreads - 1)) ? "" : "|");
+			strncat(statline, tmpstr, 2047);
+		}
+		
+		Mined = GlobalStatus.SolvedWork;
+		Rejects = GlobalStatus.RejectedWork;
+		
+		pthread_mutex_unlock(&StatusMutex);
+		
+		Log(LOG_NOTIFY, "%s", statline);
+		Log(LOG_NOTIFY, "Total hashrate: %.02fMH/s - Blocks: %lld/%lld (%.02f%%)", AllHash, Mined - Rejects, Mined, (float)(Mined - Rejects) / (float)(Mined));
+	}
 		
 	pthread_cancel(LLPThread);
 	
