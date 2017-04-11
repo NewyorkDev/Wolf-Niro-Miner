@@ -54,6 +54,7 @@ typedef struct _JobInfo
 typedef struct _StatusInfo
 {
 	uint64_t SolvedWork;
+	uint64_t AcceptedWork;
 	uint64_t RejectedWork;
 	double *ThreadHashCounts;
 	double *ThreadTimes;
@@ -380,7 +381,8 @@ void *LLPThreadProc(void *InfoPtr)
 				{
 					pthread_mutex_lock(&StatusMutex);
 					
-					Log(LOG_INFO, "Block accepted: %d/%d (%.02f%%)", GlobalStatus.SolvedWork - GlobalStatus.RejectedWork, GlobalStatus.SolvedWork, (double)(GlobalStatus.SolvedWork - GlobalStatus.RejectedWork) / GlobalStatus.SolvedWork * 100.0);
+					GlobalStatus.AcceptedWork++;
+					Log(LOG_NOTIFY, "Block accepted: %lld/%lld (%.02f%%)", GlobalStatus.AcceptedWork, GlobalStatus.SolvedWork, (double)(GlobalStatus.AcceptedWork) / GlobalStatus.SolvedWork * 100.0);
 					
 					pthread_mutex_unlock(&StatusMutex);
 					break;
@@ -390,7 +392,7 @@ void *LLPThreadProc(void *InfoPtr)
 					pthread_mutex_lock(&StatusMutex);
 					
 					GlobalStatus.RejectedWork++;
-					Log(LOG_INFO, "Block rejected: %d/%d (%.02f%%)", GlobalStatus.SolvedWork - GlobalStatus.RejectedWork, GlobalStatus.SolvedWork, (double)(GlobalStatus.SolvedWork - GlobalStatus.RejectedWork) / GlobalStatus.SolvedWork * 100.0);
+					Log(LOG_NOTIFY, "Block rejected: %lld/%lld (%.02f%%)", GlobalStatus.AcceptedWork, GlobalStatus.SolvedWork, (double)(GlobalStatus.AcceptedWork) / GlobalStatus.SolvedWork * 100.0);
 					
 					pthread_mutex_unlock(&StatusMutex);
 					break;
@@ -1033,8 +1035,6 @@ void *MinerThreadProc(void *Info)
 		GlobalStatus.ThreadHashCounts[MTInfo->ThreadID] = MTInfo->AlgoCtx.Nonce - PrevNonce;
 		GlobalStatus.ThreadTimes[MTInfo->ThreadID] = Seconds;
 		pthread_mutex_unlock(&StatusMutex);
-		
-		Log(LOG_INFO, "Thread %d, GPU ID %d, GPU Type: %s: %.02fMH/s\n", MTInfo->ThreadID, *MTInfo->AlgoCtx.GPUIdxs, MTInfo->PlatformContext->Devices[*MTInfo->AlgoCtx.GPUIdxs].DeviceName, ((MTInfo->AlgoCtx.Nonce - PrevNonce)) / (Seconds * 1e6));
 	}
 	
 	// Cleanup function called here
@@ -1480,7 +1480,7 @@ int main(int argc, char **argv)
 	{
 		char statline[2048];
 		double AllHash = 0.0;
-		uint64_t Mined, Rejects;
+		uint64_t Mined, Accepts;
 		sleep(3);
 		
 		statline[0] = 0x00;
@@ -1496,12 +1496,12 @@ int main(int argc, char **argv)
 		}
 		
 		Mined = GlobalStatus.SolvedWork;
-		Rejects = GlobalStatus.RejectedWork;
+		Accepts = GlobalStatus.AcceptedWork;
 		
 		pthread_mutex_unlock(&StatusMutex);
 		
 		Log(LOG_NOTIFY, "%s", statline);
-		Log(LOG_NOTIFY, "Total hashrate: %.02fMH/s - Blocks: %lld/%lld (%.02f%%)", AllHash, Mined - Rejects, Mined, (float)(Mined - Rejects) / (float)(Mined));
+		Log(LOG_NOTIFY, "Total hashrate: %.02fMH/s - Blocks: %lld/%lld (%.02f%%)", AllHash, Accepts, Mined, (float)(Accepts) / (float)(Mined) * 100.0);
 	}
 		
 	pthread_cancel(LLPThread);
