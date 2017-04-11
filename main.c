@@ -952,13 +952,36 @@ void *MinerThreadProc(void *Info)
 						
 			pthread_mutex_unlock(&JobMutex);
 			
-			// Fill the target backwards
-			if(size >= 1) ((uint8_t *)FullTarget)[127 - 4] = (bits >> 16) & 0xFF;
-			if(size >= 2) ((uint8_t *)FullTarget)[127 - 5] = (bits >> 8) & 0xFF;
-			if(size >= 3) ((uint8_t *)FullTarget)[127 - 6] = bits & 0xFF;
+			Log(LOG_DEBUG, "Raw bits value == 0x%08X", bits);
+			Log(LOG_DEBUG, "Size == 0x%02X", size);
 			
-			Log(LOG_DEBUG, "nSize: %d.", size);
-						
+			// 1024-bit hash
+			// (bits & 0x00FFFFFF) << (8 * (exp - 3))
+			
+			double dDiff = (double)0x0000FFFF / (double)(bits & 0x00FFFFFF);
+			int nShift = size;
+			while(nShift > 124)
+			{
+				dDiff /= 256.0;
+				nShift--;
+			}
+			
+			while(nShift < 124)
+			{
+				dDiff *= 256.0;
+				nShift++;
+			}
+			
+			dDiff *= 64;
+			
+			printf("Difficulty: %f\n", dDiff);
+			
+			size -= 3;
+			// Fill the target backwards
+			((uint8_t *)FullTarget)[size] = bits & 0xFF;
+			((uint8_t *)FullTarget)[size + 1] = (bits >> 8) & 0xFF;
+			((uint8_t *)FullTarget)[size + 2] = (bits >> 16) & 0xFF;
+									
 			Log(LOG_DEBUG, "Target: 0x%016llX\n", ((uint64_t *)FullTarget)[15]);
 			
 			MTInfo->AlgoCtx.Nonce = StartNonce;
