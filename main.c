@@ -1522,7 +1522,7 @@ int main(int argc, char **argv)
 	
 	// All other threads have been terminated, so no need to
 	// acquire the mutex to access the global statistics.
-	Log(LOG_NOTIFY, "Mined %d blocks, %d accepted.\nExiting.", GlobalStatus.SolvedWork, GlobalStatus.SolvedWork - GlobalStatus.RejectedWork);
+	Log(LOG_NOTIFY, "Mined %d blocks, %d accepted.\nExiting.", GlobalStatus.SolvedWork, GlobalStatus.AcceptedWork);
 	
 	return(0);
 }
