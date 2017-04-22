@@ -421,7 +421,10 @@ int32_t SetupNiroMiner(AlgoContext *HashData, OCLPlatform *OCL, uint32_t DeviceI
 	cl_int retval;
 	char *KernelSource, *BuildLog, *Options;
 	size_t GlobalThreads = OCL->Devices[DeviceIdx].xIntensity * OCL->Devices[DeviceIdx].TotalShaders, LocalThreads = OCL->Devices[DeviceIdx].WorkSize;
+	
+	#ifdef CL_VERSION_2_0
 	const cl_queue_properties CommandQueueProperties[] = { 0, 0, 0 };
+	#endif
 	
 	// Sanity checks
 	if(!HashData || !OCL) return(ERR_STUPID_PARAMS);
@@ -431,7 +434,11 @@ int32_t SetupNiroMiner(AlgoContext *HashData, OCLPlatform *OCL, uint32_t DeviceI
 	
 	HashData->CommandQueues = (cl_command_queue *)malloc(sizeof(cl_command_queue));
 	
+	#ifdef CL_VERSION_2_0
 	*HashData->CommandQueues = clCreateCommandQueueWithProperties(OCL->Context, OCL->Devices[DeviceIdx].DeviceID, CommandQueueProperties, &retval);
+	#else
+	*HashData->CommandQueues = clCreateCommandQueue(OCL->Context, OCL->Devices[DeviceIdx].DeviceID, 0, &retval);
+	#endif
 	
 	if(retval != CL_SUCCESS)
 	{
